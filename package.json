@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "verify:hero": "node scripts/verify-hero.mjs"
+    "verify:hero": "node scripts/verify-hero.mjs",
+    "screenshot:all": "node scripts/screenshot-all-sections.mjs"
   },
   "devDependencies": {
     "playwright": "^1.60.0",
     "vite": "^8.0.12"
   },
   "dependencies": {
+    "intl-tel-input": "^28.1.0",
     "motion": "^12.38.0"
   }
 }

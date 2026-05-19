@@ -1,5 +1,7 @@
 import "./style.css";
 import { animate, stagger, inView } from "motion";
+import intlTelInput from "intl-tel-input";
+import "intl-tel-input/styles";
 
 const app = document.querySelector("#app");
 
@@ -339,6 +341,57 @@ app.innerHTML = `
       </p>
     </div>
   </footer>
+
+  <div class="signup-modal" id="signup-modal" hidden>
+    <div class="signup-modal__overlay" data-close-modal></div>
+    <div class="signup-modal__panel" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title">
+      <button class="signup-modal__close" type="button" aria-label="Закрыть" data-close-modal>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path d="M6 6 L18 18 M6 18 L18 6"/>
+        </svg>
+      </button>
+
+      <div class="signup-modal__photo" aria-hidden="true">
+        <img src="/alena-scorpion.jpg" alt="" loading="lazy" decoding="async" />
+      </div>
+
+      <div class="signup-modal__content">
+        <p class="signup-modal__eyebrow">Бесплатный доступ</p>
+        <h2 class="signup-modal__title" id="signup-modal-title">Войдите<br><em>в практику.</em></h2>
+        <p class="signup-modal__subtitle">Утренний комплекс · Активная тренировка · Медитация и пранаяма</p>
+
+        <form class="signup-modal__form" id="signup-form" novalidate>
+          <div class="signup-field">
+            <label for="signup-name">Имя</label>
+            <input type="text" id="signup-name" name="name" required autocomplete="given-name" />
+            <span class="signup-field__error" data-error-for="name"></span>
+          </div>
+
+          <div class="signup-field">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" name="email" required autocomplete="email" />
+            <span class="signup-field__error" data-error-for="email"></span>
+          </div>
+
+          <div class="signup-field">
+            <label for="signup-phone">Телефон</label>
+            <input type="tel" id="signup-phone" name="phone" required autocomplete="tel" placeholder="+7 ___ ___ __ __" />
+            <span class="signup-field__error" data-error-for="phone"></span>
+          </div>
+
+          <button type="submit" class="signup-modal__submit">Зарегистрироваться</button>
+
+          <p class="signup-modal__legal">Нажимая кнопку, вы соглашаетесь с <a href="#">политикой конфиденциальности</a></p>
+        </form>
+
+        <div class="signup-modal__success" hidden>
+          <p class="signup-modal__success-eyebrow">Готово</p>
+          <h3 class="signup-modal__success-title">Спасибо.</h3>
+          <p class="signup-modal__success-text">Доступ к трём урокам открыт. Проверьте вашу почту — там подробности и первые шаги.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 `;
 
 animate(
@@ -516,3 +569,165 @@ if (heroCtaMagnet && !prefersReducedMotion) {
     }
   });
 }
+
+// ===== Signup modal =====
+
+const modal = document.querySelector("#signup-modal");
+const modalForm = document.querySelector("#signup-form");
+const successView = modal.querySelector(".signup-modal__success");
+const nameInput = document.querySelector("#signup-name");
+const emailInput = document.querySelector("#signup-email");
+const phoneInput = document.querySelector("#signup-phone");
+const appShell = document.querySelector("#app");
+
+const iti = intlTelInput(phoneInput, {
+  initialCountry: "ru",
+  separateDialCode: false,
+  countrySearch: true,
+  formatAsYouType: true,
+  loadUtils: () => import("intl-tel-input/utils"),
+});
+
+const focusableSelector =
+  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+let lastTrigger = null;
+let modalOpen = false;
+
+const resetModal = () => {
+  modalForm.hidden = false;
+  successView.hidden = true;
+  modalForm.reset();
+  modal
+    .querySelectorAll(".signup-field__error")
+    .forEach((el) => (el.textContent = ""));
+  modal
+    .querySelectorAll(".signup-field input")
+    .forEach((el) => el.classList.remove("has-error"));
+};
+
+const openModal = (trigger) => {
+  if (modalOpen) return;
+  modalOpen = true;
+  lastTrigger = trigger;
+  modal.hidden = false;
+  // Force reflow so the transition from opacity 0 → 1 actually animates
+  void modal.offsetWidth;
+  modal.setAttribute("data-open", "true");
+  document.body.style.overflow = "hidden";
+  // Hide everything else in #app from assistive tech
+  for (const child of appShell.children) {
+    if (child !== modal) child.setAttribute("aria-hidden", "true");
+  }
+  // Focus the first input after the transition begins
+  window.setTimeout(() => nameInput.focus(), 100);
+};
+
+const closeModal = () => {
+  if (!modalOpen) return;
+  modalOpen = false;
+  modal.removeAttribute("data-open");
+  document.body.style.overflow = "";
+  for (const child of appShell.children) {
+    if (child !== modal) child.removeAttribute("aria-hidden");
+  }
+  if (lastTrigger && typeof lastTrigger.focus === "function") {
+    lastTrigger.focus();
+  }
+  window.setTimeout(() => {
+    if (!modalOpen) {
+      modal.hidden = true;
+      resetModal();
+    }
+  }, 300);
+};
+
+document.querySelectorAll(".hero-cta, .primary-offer__cta").forEach((cta) => {
+  cta.addEventListener("click", (event) => {
+    event.preventDefault();
+    openModal(cta);
+  });
+});
+
+modal.querySelectorAll("[data-close-modal]").forEach((el) => {
+  el.addEventListener("click", closeModal);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (!modalOpen) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeModal();
+  }
+});
+
+modal.addEventListener("keydown", (event) => {
+  if (!modalOpen || event.key !== "Tab") return;
+  const focusables = [...modal.querySelectorAll(focusableSelector)].filter(
+    (el) => el.offsetParent !== null
+  );
+  if (focusables.length === 0) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const countDigits = (s) => (s.match(/\d/g) || []).length;
+
+const validateField = (input) => {
+  const value = input.value.trim();
+  let error = "";
+  if (input.name === "name") {
+    if (!value) error = "Введите имя";
+    else if (value.length < 2) error = "Имя слишком короткое";
+  } else if (input.name === "email") {
+    if (!value) error = "Введите email";
+    else if (!emailRe.test(value)) error = "Некорректный email";
+  } else if (input.name === "phone") {
+    if (!value) error = "Введите телефон";
+    else if (countDigits(value) < 7) error = "Введите хотя бы 7 цифр";
+  }
+  const errorEl = modal.querySelector(`[data-error-for="${input.name}"]`);
+  if (error) {
+    input.classList.add("has-error");
+    if (errorEl) errorEl.textContent = error;
+    return false;
+  }
+  input.classList.remove("has-error");
+  if (errorEl) errorEl.textContent = "";
+  return true;
+};
+
+modal.querySelectorAll(".signup-field input").forEach((input) => {
+  input.addEventListener("input", () => {
+    if (input.classList.contains("has-error")) validateField(input);
+  });
+});
+
+modalForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const inputs = [...modalForm.querySelectorAll("input")];
+  const results = inputs.map(validateField);
+  if (results.some((ok) => !ok)) {
+    const firstInvalid = inputs.find((i) => i.classList.contains("has-error"));
+    if (firstInvalid) firstInvalid.focus();
+    return;
+  }
+  const payload = {
+    name: nameInput.value.trim(),
+    email: emailInput.value.trim(),
+    phone: iti.getNumber() || phoneInput.value.trim(),
+    timestamp: new Date().toISOString(),
+  };
+  // eslint-disable-next-line no-console
+  console.log("[signup]", payload);
+  modalForm.hidden = true;
+  successView.hidden = false;
+});
