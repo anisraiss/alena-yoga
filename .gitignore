@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Visual verification artifacts (regenerable via npm run verify:hero / screenshot:all)
+screenshots/
+verify-hero-*.png
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
