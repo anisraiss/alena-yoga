@@ -15,36 +15,35 @@ app.innerHTML = `
   </header>
 
   <section class="hero" aria-labelledby="hero-headline">
-    <div class="hero-text">
-      <h1 class="hero-headline hero-reveal" id="hero-headline">
-        <span class="hero-headline__line">Йога,</span>
-        <span class="hero-headline__line">основанная на <em>изучении</em> тела.</span>
-      </h1>
+    <p class="hero-eyebrow hero-reveal">Йога-школа Алёны Тихоновой</p>
 
-      <p class="hero-sub hero-reveal">
-        Практика, построенная на 20 годах изучения, научных знаниях
-        и работе с лучшими учителями мира — от Дживамукти до Идо Портала.
-      </p>
+    <h1 class="hero-headline hero-reveal" id="hero-headline">
+      <span class="hero-headline__line">Йога,</span>
+      <span class="hero-headline__line">основанная на <em>изучении</em> тела.</span>
+    </h1>
 
-      <a class="hero-cta hero-reveal" href="#regisration">
+    <p class="hero-sub hero-reveal">
+      Практика, построенная на 20 годах изучения, научных знаниях
+      и работе с лучшими учителями мира — от Дживамукти до Идо Портала.
+    </p>
+
+    <span class="hero-cta-magnet hero-reveal">
+      <a class="hero-cta" href="#regisration">
         Получить три урока бесплатно
       </a>
+    </span>
 
-      <p class="hero-authority hero-reveal">
-        Тренер: Олег Тиньков · Диана Арбенина · Екатерина Андреева
-      </p>
-    </div>
+    <p class="hero-authority hero-reveal">
+      Тренер: Олег Тиньков · Диана Арбенина · Екатерина Андреева
+    </p>
 
-    <div class="hero-media hero-photo-reveal">
-      <div class="hero-media__frame">
-        <img
-          class="hero-media__image"
-          src="/alyona-hero.jpg.jpeg"
-          alt="Алёна Тихонова"
-          loading="eager"
-          decoding="async"
-        />
-      </div>
+    <div class="hero-image hero-photo-reveal">
+      <img
+        src="/alena-portrait.jpg"
+        alt="Алёна Тихонова"
+        loading="eager"
+        decoding="async"
+      />
     </div>
   </section>
 
@@ -459,3 +458,61 @@ inView(
   },
   { amount: 0.3 }
 );
+
+const heroCtaMagnet = document.querySelector(".hero-cta-magnet");
+const prefersReducedMotion = window.matchMedia(
+  "(prefers-reduced-motion: reduce)"
+).matches;
+
+if (heroCtaMagnet && !prefersReducedMotion) {
+  const RADIUS = 140;
+  const MAX_PULL = 14;
+  const GROW_RADIUS = 300;
+  const MAX_GROW = 0.08;
+  let active = false;
+
+  window.addEventListener("mousemove", (event) => {
+    const rect = heroCtaMagnet.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const clampedX = Math.max(rect.left, Math.min(event.clientX, rect.right));
+    const clampedY = Math.max(rect.top, Math.min(event.clientY, rect.bottom));
+    const edgeDx = event.clientX - clampedX;
+    const edgeDy = event.clientY - clampedY;
+    const distToEdge = Math.hypot(edgeDx, edgeDy);
+
+    let tx = 0;
+    let ty = 0;
+    let growScale = 1;
+
+    if (distToEdge < RADIUS) {
+      const magneticStrength = 1 - distToEdge / RADIUS;
+      const dirX = event.clientX - cx;
+      const dirY = event.clientY - cy;
+      const dirLen = Math.hypot(dirX, dirY) || 1;
+      tx = (dirX / dirLen) * MAX_PULL * magneticStrength;
+      ty = (dirY / dirLen) * MAX_PULL * magneticStrength;
+    }
+
+    if (distToEdge < GROW_RADIUS) {
+      const growStrength = 1 - distToEdge / GROW_RADIUS;
+      growScale = 1 + growStrength * MAX_GROW;
+    }
+
+    if (distToEdge < GROW_RADIUS) {
+      animate(
+        heroCtaMagnet,
+        { transform: `translate(${tx}px, ${ty}px) scale(${growScale})` },
+        { duration: 0.4, easing: "ease-out" }
+      );
+      active = true;
+    } else if (active) {
+      animate(
+        heroCtaMagnet,
+        { transform: "translate(0px, 0px) scale(1)" },
+        { duration: 0.4, easing: "ease-out" }
+      );
+      active = false;
+    }
+  });
+}

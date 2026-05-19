@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Read(//c/Users/araiss/AppData/Local/Temp/claude/C--Users-araiss-Projects-alena-yoga/88f4b713-fb3e-4f5b-bf4b-c8f0a43c123e/tasks/**)",
+      "PowerShell(Get-Item *)",
+      "Bash(npx playwright *)",
+      "Bash(node *)",
+      "PowerShell(netstat *)",
+      "PowerShell(New-Item *)"
     ]
   }
 }
